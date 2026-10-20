@@ -1,2 +1,13 @@
 *.vcd
-sim/
+sim/quartus/db/
+quartus/incremental_db/
+*.rpt
+*.summary
+*.sof
+*.pof
+*.pin
+*.smsg
+*.jdi
+*.done
+*.qws
+*.vvp
