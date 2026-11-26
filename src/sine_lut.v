@@ -1,5 +1,18 @@
-// GERADO por tools/gen_sine_rom.py - nao edite a mao.
-// Seno de 1 ciclo em 256 pontos, 16 bits com sinal.
+// =====================================================================================
+// sine_lut.v - TABELA DO SENO: 1 ciclo do seno em 256 pontos, 16 bits com sinal
+// =====================================================================================
+// GERADO por tools/gen_sine_rom.py - nao edite a mao (a proxima geracao apagaria a mudanca).
+//
+// Calcular seno em hardware e caro; guardar os valores prontos numa tabela e barato.
+// O endereco (addr) e a posicao dentro do ciclo: 0 = 0 graus, 64 = 90 graus (pico),
+// 128 = 180 graus (zero, descendo), 192 = 270 graus (vale). O wave_gen usa os 8 bits
+// mais altos da fase como endereco.
+//
+//   value = round(32767 * sin(2 * pi * addr / 256))
+//
+// 32767 e o maior valor de 16 bits com sinal, entao o seno ocupa a escala toda.
+// E combinacional (always @*): o Quartus transforma o case numa memoria so de leitura (ROM).
+// =====================================================================================
 module sine_lut (input wire [7:0] addr, output reg signed [15:0] value);
     always @* begin
         case (addr)

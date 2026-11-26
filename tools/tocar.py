@@ -1,10 +1,18 @@
-"""Simula uma melodia nos modulos reais (tone_gen + note_rom) e gera sim/<musica>.wav.
+"""Simula uma melodia nos modulos reais da versao monofonica (tone_gen + note_rom) e gera sim/<musica>.wav.
+
+Para que serve: ouvir no computador como a placa tocaria, sem precisar da placa.
+Passo a passo: escreve sim/melodia.txt -> compila e roda tb/tb_melody.v (iverilog/vvp)
+-> le sim/samples.txt -> grava o .wav.
+Para a versao polifonica atual, use tools/poly.py.
+
 Uso (na raiz do projeto):  python3 tools/tocar.py [musica] [onda]
   musica: ode | frere | escala         (padrao: ode)
   onda  : seno | quadrada | serra | triangular   (padrao: seno)
 Notas disponiveis na placa: C4 D4 E4 F4 G4 A4 B4 C5.  Precisa de iverilog no PATH.
 """
 import subprocess, sys, os, wave, struct
+
+# Numero de cada nota no Verilog (o mesmo da note_rom); 8 = pausa (o testbench grava silencio)
 NOTAS = {"C4":0,"D4":1,"E4":2,"F4":3,"G4":4,"A4":5,"B4":6,"C5":7,"_":8}
 ONDAS = {"seno":0,"quadrada":1,"serra":2,"triangular":3}
 MUSICAS = {  # (nota, tempos); 1 tempo = 500 ms (120 bpm)
@@ -21,14 +29,22 @@ MUSICAS = {  # (nota, tempos); 1 tempo = 500 ms (120 bpm)
 musica = sys.argv[1] if len(sys.argv) > 1 else "ode"
 onda = ONDAS[sys.argv[2]] if len(sys.argv) > 2 else 0
 os.makedirs("sim", exist_ok=True)
+
+# 1. Partitura no formato que o tb_melody le: "nota onda duracao_ms" por linha.
+#    Cada nota perde 40 ms no fim, que viram uma pausa; sem isso, notas repetidas
+#    (E4, E4) soariam como uma nota longa so.
 with open("sim/melodia.txt", "w") as f:
     for nota, t in MUSICAS[musica]:
         ms = int(t * 500)
         f.write("%d %d %d\n" % (NOTAS[nota], onda, ms - 40))   # nota
         f.write("8 0 40\n")                                     # pausa curta: separa as notas
+
+# 2. Compila e roda a simulacao (gera sim/samples.txt)
 subprocess.check_call(["iverilog", "-g2005", "-o", "sim/melodia.vvp", "tb/tb_melody.v",
                        "src/tone_gen.v", "src/wave_gen.v", "src/sine_lut.v", "src/note_rom.v"])
 subprocess.check_call(["vvp", "sim/melodia.vvp"])
+
+# 3. Converte as amostras em .wav (mono, 16 bits, 48828 Hz; o .wav so aceita taxa inteira)
 x = [int(l) for l in open("sim/samples.txt") if l.strip()]
 saida = "sim/%s.wav" % musica
 with wave.open(saida, "wb") as w:
