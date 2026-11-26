@@ -1,0 +1,37 @@
+KIT DE PARTIDA: TECLADO PS/2 NO SINTETIZADOR
+
+Copie src/ e tb/ para as pastas de mesmo nome no projeto. Cada arquivo em src/ ja tem as entradas e saidas
+declaradas e um comentario dizendo o que o modulo precisa fazer; o miolo e com voce. A teoria e os
+criterios de aceite estao no guia da equipe, na aba do pacote.
+
+O JEITO DE TRABALHAR
+  1. Ler a aba do pacote no guia (o que o modulo faz e por que).
+  2. Escrever o miolo do modulo: na mao, estudando ou com ajuda de IA.
+  3. Rodar o teste ate passar.
+  4. Conferir a mao pelo menos 3 casos (ex.: decodificar 3 codigos no papel e comparar com a simulacao).
+  5. Explicar o modulo para alguem do grupo. So esta pronto quando a outra pessoa entende.
+  6. Anotar numa linha como foi feito (na mao ou com IA) e como foi validado.
+
+INSTALAR (uma vez)
+  Linux:   sudo apt install iverilog gtkwave
+  Windows: instalador "Icarus Verilog for Windows" (costuma oferecer o GTKWave junto)
+
+RODAR OS TESTES (na raiz do projeto; crie a pasta sim/ se nao existir)
+  Receptor:  iverilog -o sim/rx.vvp   tb/tb_receptor_ps2.v    src/receptor_ps2.v                   && vvp sim/rx.vvp
+  Tradutor:  iverilog -o sim/tec.vvp  tb/tb_tradutor_teclas.v src/tradutor_teclas.v                && vvp sim/tec.vvp
+  Display:   iverilog -o sim/disp.vvp tb/tb_display_7seg.v    src/display_7seg.v                   && vvp sim/disp.vvp
+  Juntos:    iverilog -o sim/tudo.vvp tb/tb_teclado_completo.v src/receptor_ps2.v src/tradutor_teclas.v && vvp sim/tudo.vvp
+
+O QUE CADA TESTE DEVE MOSTRAR QUANDO O MODULO ESTIVER CERTO
+  Receptor: "recebido 1c", "recebido f0", "recebido 1c", "recebido 33" e no fim
+            "codigos validos recebidos: 4". O K com paridade errada NAO pode aparecer.
+  Tradutor: todas as linhas comecando com "ok" e no fim "falhas: 0".
+  Display:  o desenho de cada digito de 0 a 9 com '#', e 10 a 15 em branco.
+  Juntos:   "ok" nas duas conferencias e "falhas: 0" (so quando receptor e tradutor estiverem prontos).
+
+VER AS FORMAS DE ONDA
+  Os testes do receptor e do tradutor gravam um arquivo .vcd na pasta onde voce rodou.
+  Abra com:  gtkwave receptor_ps2.vcd   (ou tradutor_teclas.vcd)
+  Clique no modulo na arvore a esquerda, arraste os sinais para a area de ondas e ajuste o zoom.
+
+Com o miolo vazio, os testes compilam mas falham: e o ponto de partida esperado.
