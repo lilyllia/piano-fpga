@@ -7,7 +7,8 @@
 // O testbench faz o papel do WM8731 em modo mestre:
 //   - gera BCLK e DACLRCK (como o codec faria);
 //   - "escuta" DACDAT exatamente como o codec, montando cada amostra de 16 bits;
-//   - grava o canal esquerdo em sim/samples.txt (um numero com sinal por linha).
+//   - grava o quadro com lrck = 0 em sim/samples.txt (um numero com sinal por linha);
+//     o som e mono, entao os dois canais tem a mesma amostra.
 // Depois, tools/analisa_audio.py mede a frequencia de cada trecho e gera um .wav.
 //
 // BCLK = 3,125 MHz (50 MHz / 16), LRCK = BCLK/64  =>  fs = 48828,125 Hz, igual a placa.
@@ -40,7 +41,7 @@ module tb_synth_core;
 
     // --- "codec": receptor ---
     // Amostra DACDAT a cada subida de BCLK; o MSB vem na 1a subida apos a transicao do LRCK.
-    // Junta 16 bits e, se for o canal esquerdo (lrck = 0), grava a amostra.
+    // Junta 16 bits e, se for o quadro com lrck = 0, grava a amostra.
     reg lrck_prev = 1;
     integer nrise = 0, fd;
     reg [15:0] sh = 0;                     // registrador de deslocamento que monta a amostra

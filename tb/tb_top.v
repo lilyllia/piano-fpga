@@ -7,7 +7,7 @@
 //   - escravo I2C falso: responde ACK a cada byte e imprime cada registrador recebido
 //     ("I2C: dev=34 reg=7 dado=041" etc.), para conferir a configuracao;
 //   - gera BCLK/LRCK a partir do AUD_XCK, como o codec de verdade;
-//   - decodifica AUD_DACDAT e grava o canal esquerdo em sim/samples_top.txt;
+//   - decodifica AUD_DACDAT e grava o quadro com lrck = 0 em sim/samples_top.txt (som mono);
 //   - no fim (60 ms), mostra os LEDs verdes: esperado LEDG = ...01 (configurado, sem erro).
 //
 // Observacao: nao existe ainda um testbench equivalente para o topo atual (de1_poly_top);
@@ -60,7 +60,7 @@ module tb_top;
     end
     assign AUD_BCLK = bclk; assign AUD_DACLRCK = lrck;
 
-    // --- receptor: decodifica DACDAT e grava o canal esquerdo ---
+    // --- receptor: decodifica DACDAT e grava o quadro com lrck = 0 ---
     // (mesma logica do receptor do tb_synth_core: 16 bits a partir da 1a subida de BCLK no canal)
     reg lrck_prev = 1; integer nrise = 0, fd; reg [15:0] rsh = 0;
     always @(posedge bclk) begin

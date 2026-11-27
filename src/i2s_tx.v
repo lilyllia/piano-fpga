@@ -7,12 +7,14 @@
 //
 // OS SINAIS DO CODEC:
 //   bclk (relogio de bit, 3,125 MHz): o codec le um bit de dacdat a cada SUBIDA de bclk.
-//   lrck (relogio de canal, 48828,125 Hz): 0 = quadro do canal esquerdo, 1 = direito.
+//   lrck (relogio de canal, 48828,125 Hz): muda a cada canal. No formato left-justified com
+//   LRP = 0 (como o i2c_config configura), 1 = canal esquerdo e 0 = canal direito
+//   (folha de dados do WM8731, bit LRP do registrador R7; no I2S da Philips e o contrario).
 //   Cada canal dura 32 pulsos de bclk; so os 16 primeiros carregam a amostra.
 //
 //   lrck  ___________________________________|""""""""""""""""""""""""""""""""""
 //   bclk  _|"|_|"|_|"|_|"|_ ... (32 pulsos)    _|"|_|"|_|"|_ ...
-//   dados  [b15][b14][b13] ... [b0] 0 0 0 ...   [b15][b14] ...   (esquerdo | direito)
+//   dados  [b15][b14][b13] ... [b0] 0 0 0 ...   [b15][b14] ...   (direito | esquerdo)
 //
 // REGRA DO WM8731 (left-justified): o bit mais significativo (b15) ja precisa estar no fio
 // na 1a subida de bclk depois que lrck muda; depois, um bit novo por subida.
@@ -23,7 +25,8 @@
 // e as bordas sao detectadas comparando o valor atual com o anterior. 50 MHz e 16 vezes
 // mais rapido que bclk, entao nenhuma borda se perde.
 //
-// sample_tick: pulso de 1 ciclo no inicio de cada quadro do canal esquerdo (1 por amostra).
+// sample_tick: pulso de 1 ciclo quando lrck desce para 0 (1 por amostra; pela folha de dados,
+// e o inicio do canal direito).
 // O synth_poly_core usa esse pulso para pedir ao poly_gen a proxima amostra, que ficara
 // pronta bem antes do proximo quadro (a amostra enviada e sempre a calculada no quadro anterior).
 // =====================================================================================
@@ -31,11 +34,11 @@ module i2s_tx (
     input  wire               clk,        // 50 MHz
     input  wire               reset,      // ativo em 1
     input  wire               bclk,       // relogio de bit, vindo do codec
-    input  wire               lrck,       // relogio de canal, vindo do codec (0 esquerdo, 1 direito)
-    input  wire signed [15:0] sample_l,   // amostra do canal esquerdo
-    input  wire signed [15:0] sample_r,   // amostra do canal direito
+    input  wire               lrck,       // relogio de canal, vindo do codec (1 esquerdo, 0 direito)
+    input  wire signed [15:0] sample_l,   // amostra enviada com lrck = 0 (nome herdado do I2S; e o canal direito)
+    input  wire signed [15:0] sample_r,   // amostra enviada com lrck = 1 (nome herdado do I2S; e o canal esquerdo)
     output reg                dacdat,     // bit atual do audio, para o codec
-    output wire               sample_tick // pulso: comecou um quadro novo (canal esquerdo)
+    output wire               sample_tick // pulso: lrck desceu, comecou um quadro novo
 );
     // ---------------------------------------------------------------------------------
     // SINCRONIZACAO E DETECCAO DE BORDAS
@@ -51,7 +54,8 @@ module i2s_tx (
     wire b_rise    = bs[1] & ~bs[2];      // bclk era 0 e agora e 1: subida
     wire b_fall    = ~bs[1] & bs[2];      // bclk era 1 e agora e 0: descida
     wire lrck_edge = ls[1] ^ ls[2];       // lrck mudou (qualquer direcao): comecou um canal
-    assign sample_tick = lrck_edge & ~ls[1];  // mudou e agora vale 0: comecou o canal esquerdo
+    assign sample_tick = lrck_edge & ~ls[1];  // mudou e agora vale 0: 1 pulso por amostra
+    // (sample_l e sample_r recebem a mesma amostra, entao a troca de nomes nao muda o som)
 
     reg  [15:0] word;                      // amostra sendo enviada neste canal
     reg  [5:0]  cnt;                       // quantas subidas de bclk desde a mudanca de lrck (para em 63)

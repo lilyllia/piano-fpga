@@ -37,7 +37,7 @@ module de1_poly_top (
     inout  wire        I2C_SDAT,     // I2C: dado da configuracao (inout: o codec tambem escreve nele, no ACK)
     output wire        AUD_XCK,      // relogio mestre que mandamos para o codec (12,5 MHz)
     input  wire        AUD_BCLK,     // relogio de bit gerado PELO CODEC (ele e o mestre do audio)
-    input  wire        AUD_DACLRCK,  // relogio de canal gerado pelo codec: 0 = esquerdo, 1 = direito
+    input  wire        AUD_DACLRCK,  // relogio de canal gerado pelo codec (left-justified, LRP=0: 1 = esquerdo, 0 = direito)
     output wire        AUD_DACDAT,   // bits do audio que mandamos para o conversor (DAC)
     input  wire        AUD_ADCLRCK,  // entrada de microfone: nao usada, so declarada para o pinout ficar completo
     input  wire        AUD_ADCDAT    // idem
